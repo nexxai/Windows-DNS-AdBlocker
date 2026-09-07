@@ -114,6 +114,10 @@ try
         {
             $arguments += " -ActiveDirectoryIntegrated"
         }
+        else
+        {
+            $arguments += ' -ActiveDirectoryIntegrated:$false'
+        }
 
         $powershellPath = Join-Path $PSHOME "powershell.exe"
         $taskCommand = "`"$powershellPath`" $arguments"
@@ -141,7 +145,7 @@ try
         Import-Module DnsServer
     }
 
-    if ($activeDirectoryDetected -and $haveDnsServerModule -and ([Environment]::UserInteractive) -and -not ($ActiveDirectoryIntegrated -or $Remove))
+    if ($activeDirectoryDetected -and $haveDnsServerModule -and ([Environment]::UserInteractive) -and -not ($PSBoundParameters.ContainsKey('ActiveDirectoryIntegrated')) -and -not $Remove)
     {
         # Recommend AD integration if not selected.
         $choice = $host.ui.PromptForChoice(

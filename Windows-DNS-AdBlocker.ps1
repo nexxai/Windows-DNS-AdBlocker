@@ -119,7 +119,21 @@ try
             $arguments += ' -ActiveDirectoryIntegrated:$false'
         }
 
-        $powershellPath = Join-Path $PSHOME "powershell.exe"
+        if ($PSVersionTable.PSVersion.Major -ge 6)
+        {
+            $powershellPath = Join-Path $PSHOME "pwsh.exe"
+        }
+        else
+        {
+            $powershellPath = Join-Path $PSHOME "powershell.exe"
+        }
+
+        if (-not (Test-Path -LiteralPath $powershellPath -PathType Leaf))
+        {
+            throw "PowerShell executable not found at expected location: $powershellPath"
+        }
+
+        Write-Host "Using PowerShell executable: $powershellPath"
         $taskCommand = "`"$powershellPath`" $arguments"
         & schtasks.exe /Create /TN "Windows DNS AdBlocker" /TR $taskCommand /SC WEEKLY /D SAT /ST 08:00 /RU SYSTEM /RL HIGHEST /F
 

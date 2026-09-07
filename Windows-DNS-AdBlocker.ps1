@@ -14,11 +14,15 @@
     .PARAMETER ActiveDirectoryIntegrated
         If set, detect Active Directory and create AD integrated zones if found.
         Integrated zones will replicate to all DNS servers in AD forest.
+
+    .PARAMETER InstallScheduledTask
+        Install a scheduled task that runs this script every Saturday at 8:00 AM.
 #>
 param
 (
     [switch]$Remove,
-    [switch]$ActiveDirectoryIntegrated
+    [switch]$ActiveDirectoryIntegrated,
+    [switch]$InstallScheduledTask
 )
 
 Write-Host "===================================================="
@@ -85,6 +89,43 @@ try
     if (-not (Get-Service -Name DNS -ErrorAction SilentlyContinue))
     {
         throw "Local DNS server not found. Please run on a server that hosts DNS."
+    }
+
+    if ($InstallScheduledTask)
+    {
+        if (-not ([Environment]::UserInteractive))
+        {
+            throw "Installing the scheduled task requires an interactive session."
+        }
+
+        $scriptPath = (Resolve-Path -LiteralPath $MyInvocation.MyCommand.Path).Path
+        $choice = $host.ui.PromptForChoice(
+            "Scheduled task configuration",
+            "Run the scheduled task with Active Directory integration?",
+            @(
+                New-Object System.Management.Automation.Host.ChoiceDescription ('&Yes', 'Use the ActiveDirectoryIntegrated flag.')
+                New-Object System.Management.Automation.Host.ChoiceDescription ('&No', 'Use file-based zones (no replication).')
+            ),
+            0
+        )
+
+        $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        if ($choice -eq 0)
+        {
+            $arguments += " -ActiveDirectoryIntegrated"
+        }
+
+        $powershellPath = Join-Path $PSHOME "powershell.exe"
+        $taskCommand = "`"$powershellPath`" $arguments"
+        & schtasks.exe /Create /TN "Windows DNS AdBlocker" /TR $taskCommand /SC WEEKLY /D SAT /ST 08:00 /RU SYSTEM /RL HIGHEST /F
+
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw "Failed to install the scheduled task."
+        }
+
+        Write-Host "Scheduled task installed to run every Saturday at 8:00 AM."
+        return
     }
 
     if (-not ([Environment]::UserInteractive))

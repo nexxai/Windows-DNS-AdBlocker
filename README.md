@@ -35,6 +35,10 @@ This file is used only for non-Active Directory integrated deployments. For AD-i
 
 If you want to remove all the adblock zones from your DNS, run this script again with the `-Remove` switch. Please pay attention to the `Caution` paragraph above, especially if you have created the zones in non-Active Directory integrated mode.
 
+## Scheduling
+
+Run `.\Windows-DNS-AdBlocker.ps1 -InstallScheduledTask` from an elevated PowerShell session to install a task that runs every Saturday at 8:00 AM. The installer uses the script's current location and asks whether scheduled runs should use the `-ActiveDirectoryIntegrated` switch. The task runs as `SYSTEM` with highest privileges; moving or deleting the script afterward will break the task.
+
 ## License
 
 This project is licensed under the [MIT license](LICENSE)
